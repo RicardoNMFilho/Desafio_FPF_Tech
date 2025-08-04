@@ -72,31 +72,30 @@ char * generate_text() {
 }
 
 
-char ** generate_list_random_texts() {
-    int num_texts = random_number(MIN_TEXTS, MAX_TEXTS);
-
-    char ** list = (char **) malloc(num_texts * sizeof(char *)); 
-
+char ** generate_list_random_texts(int *num_texts) {
+    int n = random_number(MIN_TEXTS, MAX_TEXTS);
+    if (num_texts) *num_texts = n;
+    char ** list = (char **) malloc(n * sizeof(char *));
     if (list == NULL) {
-
-        return NULL; 
-
+        return NULL;
     }
-
-    for (int i = 0; i < num_texts; i++) {
+    for (int i = 0; i < n; i++) {
         list[i] = generate_text();
-
         if (list[i] == NULL) {
-
             for (int j = 0; j < i; j++) {
                 free(list[j]);
             }
-
             free(list);
-
             return NULL;
         }
     }
-
     return list;
+}
+
+void free_list_random_texts(char **list, int num_texts) {
+    if (!list) return;
+    for (int i = 0; i < num_texts; i++) {
+        free(list[i]);
+    }
+    free(list);
 }

@@ -13,6 +13,8 @@ WORKDIR /app
 
 COPY . .
 
-RUN cmake -S . -B build && cmake --build build
+RUN cmake -S . -B build && cmake --build build \
+    && cp build/libgentexts.so /usr/lib/ \
+    && ldconfig
 
-CMD ["./build/frontend/frontend"]
+CMD ["./build/frontend"]
