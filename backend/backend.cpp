@@ -23,15 +23,3 @@ char * get_random_text () {
 
     return texts[number];
 }
-
-
-int main() {
-    cout << "Backend running!" << endl;
-
-    srand(static_cast<unsigned int>(time(nullptr)));
-
-    char * random_text = get_random_text();
-    cout << random_text << endl;
-
-    return 0;
-}

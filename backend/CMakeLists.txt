@@ -1,12 +1,3 @@
-cmake_minimum_required(VERSION 3.10)
-
-project(backend)
-
-add_library(gentexts SHARED ../lib/lib_gentexts.c)
-target_include_directories(gentexts PUBLIC ../lib)
-
-add_executable(backend backend.cpp)
-
-target_include_directories(backend PRIVATE ../lib)
-
-target_link_libraries(backend PRIVATE gentexts dl curl)
+add_library(backend_lib backend.cpp)
+target_include_directories(backend_lib PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+target_link_libraries(backend_lib PUBLIC gentexts)
