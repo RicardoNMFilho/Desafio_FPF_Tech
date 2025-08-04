@@ -1,6 +1,8 @@
 #include <iostream>
 
+using namespace std;
+
 int main() {
-    std::cout << "Backend running!" << std::endl;
+    cout << "Backend running!" << endl;
     return 0;
 }
