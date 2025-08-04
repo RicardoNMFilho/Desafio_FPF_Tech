@@ -6,6 +6,7 @@ RUN apt-get update && apt-get install -y \
     g++ \
     libcurl4-openssl-dev \
     ca-certificates \
+    qtbase5-dev qt5-qmake \ 
     && update-ca-certificates
 
 WORKDIR /app

@@ -12,7 +12,7 @@
 #define MIN_CHARS 3
 
 #define MAX_TEXTS 8
-#define MIN_TEXTS 2
+#define MIN_TEXTS 5
 
 int random_number(int min, int max) {
     int number;
