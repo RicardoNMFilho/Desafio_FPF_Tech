@@ -1,4 +1,6 @@
 #include <iostream>
+#include <cstdlib>
+#include <ctime>
 
 extern "C" {
     #include "lib_gentexts.h"
@@ -6,16 +8,30 @@ extern "C" {
 
 using namespace std;
 
+int random_number(int min, int max) {
+    int number;
+
+    number = min + rand() % (max - min + 1);
+
+    return number;
+}
+
+char * get_random_text () {
+    char ** texts = generate_list_random_texts();
+
+    int number = random_number(0, 4);
+
+    return texts[number];
+}
 
 
 int main() {
     cout << "Backend running!" << endl;
 
-    char** texts = generate_list_random_texts();
+    srand(static_cast<unsigned int>(time(nullptr)));
 
-    for (int i = 0; i < 5; ++i) {
-        std::cout << texts[i] << std::endl;
-    }
+    char * random_text = get_random_text();
+    cout << random_text << endl;
 
     return 0;
 }
