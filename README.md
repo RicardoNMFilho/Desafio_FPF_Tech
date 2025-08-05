@@ -123,6 +123,51 @@ Este projeto foi desenvolvido para ser executado em ambiente Linux utilizando Do
 
 - Ao fechar a interface, todos os recursos alocados (textos, biblioteca dinâmica) são liberados automaticamente.
 
+## Como executar no Linux
+
+Para rodar a aplicação no Linux usando Docker com suporte à interface gráfica Qt e saída de áudio via PulseAudio, siga os passos abaixo.
+
+### Pré-requisitos
+
+- Docker instalado e funcionando no seu Linux.
+- Servidor X11 ativo (normalmente já vem configurado no Linux).
+- PulseAudio rodando no host Linux.
+
+### Comandos
+
+No terminal, defina a variável do servidor PulseAudio:
+
+```bash
+export PULSE_SERVER=unix:${XDG_RUNTIME_DIR}/pulse/native
+```
+
+Depois execute o container Docker com:
+
+```bash
+sudo docker run -it \
+  -e DISPLAY=$DISPLAY \
+  -e PULSE_SERVER=$PULSE_SERVER \
+  -v /tmp/.X11-unix:/tmp/.X11-unix \
+  -v ${XDG_RUNTIME_DIR}/pulse/native:${XDG_RUNTIME_DIR}/pulse/native \
+  -v ~/.config/pulse/cookie:/root/.config/pulse/cookie \
+  -v $(pwd)/frontend/assets:/app/frontend/assets \
+  desafio-fpf-tech
+```
+
+### Explicações
+
+- `-e DISPLAY=$DISPLAY` : Permite acessar o servidor X11 para exibir a interface gráfica.  
+- `-e PULSE_SERVER=$PULSE_SERVER` : Permite acesso ao servidor de áudio PulseAudio do host.  
+- `-v /tmp/.X11-unix:/tmp/.X11-unix` : Monta o socket do X11 para comunicação gráfica.  
+- `-v ${XDG_RUNTIME_DIR}/pulse/native:${XDG_RUNTIME_DIR}/pulse/native` e `-v ~/.config/pulse/cookie:/root/.config/pulse/cookie` : Permitem que o container use o áudio via PulseAudio do host.  
+- `-v $(pwd)/frontend/assets:/app/frontend/assets` : Monta a pasta local com arquivos multimídia para o container.
+
+### Notas
+
+- Certifique-se que o arquivo `sound.wav` está dentro da pasta `frontend/assets` na raiz do projeto.  
+- A variável `XDG_RUNTIME_DIR` geralmente é algo como `/run/user/1000`. Você pode verificar com `echo $XDG_RUNTIME_DIR`.  
+- Execute os comandos no diretório raiz do projeto (onde está a pasta `frontend`).
+
 ## Documentações e Tutoriais Utilizados
 
 | Link | Descrição |
