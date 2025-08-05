@@ -6,7 +6,9 @@ RUN apt-get update && apt-get install -y \
     g++ \
     libcurl4-openssl-dev \
     ca-certificates \
-    qtbase5-dev qt5-qmake \ 
+    qtbase5-dev qt5-qmake qtbase5-dev-tools qtchooser qt5-qmake qtbase5-dev \
+    libx11-xcb1 libxcb1 libxcb-util1 libxrender1 libxi6 libxext6 libxfixes3 libxrandr2 libxinerama1 libxcursor1 libxkbcommon0 libxkbcommon-x11-0 \
+    libgl1-mesa-glx libglib2.0-0 \
     && update-ca-certificates
 
 WORKDIR /app

@@ -13,7 +13,7 @@ target_include_directories(backend_lib PUBLIC backend lib)
 target_link_libraries(backend_lib PUBLIC gentexts curl)
 
 # Frontend
-find_package(Qt5 REQUIRED COMPONENTS Widgets)
+find_package(Qt5 REQUIRED COMPONENTS Widgets Core)
 add_executable(frontend frontend/main.cpp frontend/gui.cpp)
 target_include_directories(frontend PUBLIC frontend backend lib)
-target_link_libraries(frontend PRIVATE backend_lib Qt5::Widgets curl)
+target_link_libraries(frontend PRIVATE backend_lib Qt5::Widgets Qt5::Core curl)
