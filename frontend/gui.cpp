@@ -175,3 +175,53 @@ MainWindow::MainWindow(QWidget* parent) : QWidget(parent) {
 
     });
 }
+
+
+/*
+- MainWindow : Classe principal da interface, herda de QWidget. Recebe 'parent' (ponteiro para widget pai, padrão do Qt). Implementa toda a lógica visual e de integração com backend.
+
+- QVBoxLayout : Layout vertical para organizar widgets em coluna. Usado para o layout principal e para os blocos (GroupBox).
+
+- QGroupBox : Widget de agrupamento com título. Usado para separar visualmente seções: JSON, texto, imagem.
+
+- QLabel : Widget para exibir texto ou imagem. Usado para mostrar o JSON, texto aleatório, tempo decorrido e imagem.
+
+- QFont : Define fonte usada nos títulos e conteúdos.
+
+- QRegularExpression / QRegularExpressionMatch : Usados para extrair campos do JSON retornado pela API (timezone, datetime).
+
+- QMediaPlayer : Reproduz áudio (wav) ao trocar texto. Instanciado uma vez, reutilizado a cada troca.
+
+- QPixmap : Carrega e exibe imagem ao trocar texto. Escala imagem para caber no widget.
+
+- QTimer : Timer para atualizar relógio e sincronizar troca de texto a cada 10 segundos. Executa função de atualização a cada segundo.
+
+- QtConcurrent::run : Executa chamada à API e inicialização do backend em thread separada, evitando travar a interface.
+
+- QMetaObject::invokeMethod : Garante que atualizações visuais ocorram na thread principal do Qt.
+
+- backend_init() : Função do backend que inicializa o conjunto de textos aleatórios.
+
+- get_worldtime_json() : Função do backend que retorna JSON da API WorldTime.
+
+- get_random_text() : Função do backend que retorna um texto aleatório do conjunto gerado.
+
+- get_elapsed_seconds() : Função do backend que retorna o tempo decorrido desde inicialização.
+
+================================================================================
+Fluxo geral:
+1. Interface é criada, mas fica oculta até obter resposta da API.
+2. Chama backend para obter JSON da WorldTimeAPI (thread separada).
+3. Atualiza título e label com dados do JSON.
+4. Inicializa backend (gera textos aleatórios).
+5. Atualiza texto, som e imagem na interface.
+6. Timer atualiza relógio e troca texto a cada 10 segundos, sincronizado com uptime.
+
+================================================================================
+Parâmetros principais:
+- parent (QWidget*): Widget pai, padrão do Qt.
+- textLabel, jsonLabel, imageLabel, elapsedLabel: Labels para exibir dados.
+- updateText: Função lambda para atualizar texto, som e imagem.
+- elapsedTimer: Timer para atualizar relógio e sincronizar troca de texto.
+================================================================================
+*/
