@@ -1,3 +1,4 @@
+
 #include <QVBoxLayout>
 #include <QLabel>
 #include <QString>
@@ -6,6 +7,11 @@
 #include <QGroupBox>
 #include <QFont>
 #include <QRegularExpression>
+#include <QMediaPlayer>
+#include <QAudioOutput>
+#include <QUrl>
+#include <QPixmap>
+#include <QtConcurrent>
 
 #include "gui.h"
 #include "../backend/backend.h"
@@ -36,6 +42,16 @@ MainWindow::MainWindow(QWidget* parent) : QWidget(parent) {
     textLayout->addWidget(textLabel);
     mainLayout->addWidget(textBox);
 
+    // Bloco para imagem
+    QGroupBox* imageBox = new QGroupBox("Imagem", this);
+    QVBoxLayout* imageLayout = new QVBoxLayout(imageBox);
+    QLabel* imageLabel = new QLabel(this);
+    imageLabel->setAlignment(Qt::AlignCenter);
+    imageLabel->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
+    imageLabel->setFixedHeight(120);
+    imageLabel->setVisible(false);
+    imageLayout->addWidget(imageLabel);
+    mainLayout->addWidget(imageBox);
     QLabel* elapsedLabel = new QLabel("Tempo decorrido: 0s", this);
     elapsedLabel->setAlignment(Qt::AlignCenter);
     elapsedLabel->setFont(titleFont);
@@ -63,52 +79,87 @@ MainWindow::MainWindow(QWidget* parent) : QWidget(parent) {
         }
     )");
 
-    char* json = get_worldtime_json();
-    if (json) {
-        QString jsonStr(json);
-        jsonLabel->setText(jsonStr);
+    // Inicialização assíncrona: só abrir interface após resposta da API
+    this->hide();
+    QtConcurrent::run([this, jsonLabel, elapsedLabel, textLabel, imageLabel]() {
+        char* json = get_worldtime_json();
+        QMetaObject::invokeMethod(this, [=]() {
+            if (json) {
+                QString jsonStr(json);
+                jsonLabel->setText(jsonStr);
 
-        QString timezone, datetime;
-        QRegularExpression tzRegex(QStringLiteral("\"timezone\"\\s*:\\s*\"([^\"]+)\""));
-        QRegularExpression dtRegex(QStringLiteral("\"datetime\"\\s*:\\s*\"([^\"]+)\""));
+                QString timezone, datetime;
+                QRegularExpression tzRegex(QStringLiteral("\"timezone\"\\s*:\\s*\"([^\"]+)\""));
+                QRegularExpression dtRegex(QStringLiteral("\"datetime\"\\s*:\\s*\"([^\"]+)\""));
 
-        QRegularExpressionMatch tzMatch = tzRegex.match(jsonStr);
-        QRegularExpressionMatch dtMatch = dtRegex.match(jsonStr);
+                QRegularExpressionMatch tzMatch = tzRegex.match(jsonStr);
+                QRegularExpressionMatch dtMatch = dtRegex.match(jsonStr);
 
-        if (tzMatch.hasMatch() && dtMatch.hasMatch()) {
-            timezone = tzMatch.captured(1);
-            datetime = dtMatch.captured(1);
+                if (tzMatch.hasMatch() && dtMatch.hasMatch()) {
+                    timezone = tzMatch.captured(1);
+                    datetime = dtMatch.captured(1);
 
-            QString title = timezone + ", " + datetime;
-            setWindowTitle(title);
-        } else {
-            setWindowTitle("Desafio FPF Tech (dados inválidos)");
-        }
+                    QString title = timezone + ", " + datetime;
+                    setWindowTitle(title);
+                } else {
+                    setWindowTitle("Desafio FPF Tech (dados inválidos)");
+                }
 
-        free(json);
-    } else {
-        jsonLabel->setText("Falha ao requisitar worldtimeapi.");
-        setWindowTitle("Desafio FPF Tech (erro na API)");
-    }
+                free(json);
+            } else {
+                jsonLabel->setText("Falha ao requisitar worldtimeapi.");
+                setWindowTitle("Desafio FPF Tech (erro na API)");
+            }
 
-    auto updateText = [textLabel]() {
-        char* new_text = get_random_text();
-        if (new_text) {
-            textLabel->setText(new_text);
-            free(new_text);
-        }
-    };
+            // Só agora exibe a interface e inicia timers/processos
+            this->show();
 
-    updateText();
+            // Função para atualizar texto, tocar áudio e exibir imagem
+            auto updateText = [textLabel, imageLabel, this]() {
+                char* new_text = get_random_text();
+                if (new_text) {
+                    textLabel->setText(new_text);
+                    free(new_text);
+                }
 
-    QTimer* textTimer = new QTimer(this);
-    connect(textTimer, &QTimer::timeout, updateText);
-    textTimer->start(10000);
+                // Tocar áudio (Qt5)
+                static QMediaPlayer* player = nullptr;
+                if (!player) {
+                    player = new QMediaPlayer(this);
+                    player->setMedia(QUrl::fromLocalFile("frontend/assets/sound.mp3"));
+                }
+                player->stop();
+                player->play();
+                // Forçar volume máximo
+                player->setVolume(100);
+                QTimer::singleShot(1000, this, [player]() { player->stop(); });
 
-    QTimer* elapsedTimer = new QTimer(this);
-    connect(elapsedTimer, &QTimer::timeout, [elapsedLabel]() {
-        double elapsed = get_elapsed_seconds();
-        elapsedLabel->setText(QString("Tempo decorrido: %1s").arg((int)elapsed));
+                // Exibir imagem por 1 segundo
+                QPixmap pixmap("frontend/assets/image.jpg");
+                if (!pixmap.isNull()) {
+                    int maxWidth = imageLabel->parentWidget()->width() - 40; // margem aproximada
+                    QPixmap scaledPixmap = pixmap.scaled(maxWidth, imageLabel->height(), Qt::KeepAspectRatio, Qt::SmoothTransformation);
+                    imageLabel->setPixmap(scaledPixmap);
+                    imageLabel->setVisible(true);
+                    QTimer::singleShot(1000, this, [imageLabel]() {
+                        imageLabel->clear();
+                        imageLabel->setVisible(false);
+                    });
+                }
+            };
+
+            updateText();
+
+            QTimer* textTimer = new QTimer(this);
+            connect(textTimer, &QTimer::timeout, updateText);
+            textTimer->start(10000);
+
+            QTimer* elapsedTimer = new QTimer(this);
+            connect(elapsedTimer, &QTimer::timeout, [elapsedLabel]() {
+                double elapsed = get_elapsed_seconds();
+                elapsedLabel->setText(QString("Tempo decorrido: %1s").arg((int)elapsed));
+            });
+            elapsedTimer->start(1000);
+        });
     });
-    elapsedTimer->start(1000);
 }
