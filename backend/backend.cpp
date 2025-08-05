@@ -5,6 +5,9 @@
 #include <curl/curl.h>
 
 using namespace std;
+
+static time_t start_time = 0;
+
 size_t write_callback(void* contents, size_t size, size_t nmemb, void* userp) {
     size_t total = size * nmemb;
     strncat((char*)userp, (char*)contents, total);
@@ -39,6 +42,11 @@ char* get_worldtime_json() {
 
 void backend_init() {
     srand(static_cast<unsigned int>(time(nullptr)));
+    start_time = time(nullptr);
+}
+
+double get_elapsed_seconds() {
+    return difftime(time(nullptr), start_time);
 }
 
 int random_number(int min, int max) {
