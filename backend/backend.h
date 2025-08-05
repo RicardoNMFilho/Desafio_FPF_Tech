@@ -2,6 +2,7 @@
 #define BACKEND_H
 
 void backend_init();
-char * get_random_text();
+char* get_worldtime_json();
+char* get_random_text();
 
 #endif

@@ -10,7 +10,7 @@ target_include_directories(gentexts PUBLIC lib)
 # Backend
 add_library(backend_lib STATIC backend/backend.cpp)
 target_include_directories(backend_lib PUBLIC backend lib)
-target_link_libraries(backend_lib PUBLIC gentexts)
+target_link_libraries(backend_lib PUBLIC gentexts curl)
 
 # Frontend
 find_package(Qt5 REQUIRED COMPONENTS Widgets)
