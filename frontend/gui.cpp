@@ -85,59 +85,46 @@ MainWindow::MainWindow(QWidget* parent) : QWidget(parent) {
         char* json = get_worldtime_json();
         QMetaObject::invokeMethod(this, [=]() {
             if (json) {
+                backend_init();
                 QString jsonStr(json);
                 jsonLabel->setText(jsonStr);
-
                 QString timezone, datetime;
                 QRegularExpression tzRegex(QStringLiteral("\"timezone\"\\s*:\\s*\"([^\"]+)\""));
                 QRegularExpression dtRegex(QStringLiteral("\"datetime\"\\s*:\\s*\"([^\"]+)\""));
-
                 QRegularExpressionMatch tzMatch = tzRegex.match(jsonStr);
                 QRegularExpressionMatch dtMatch = dtRegex.match(jsonStr);
-
                 if (tzMatch.hasMatch() && dtMatch.hasMatch()) {
                     timezone = tzMatch.captured(1);
                     datetime = dtMatch.captured(1);
-
                     QString title = timezone + ", " + datetime;
                     setWindowTitle(title);
                 } else {
                     setWindowTitle("Desafio FPF Tech (dados inválidos)");
                 }
-
                 free(json);
             } else {
                 jsonLabel->setText("Falha ao requisitar worldtimeapi.");
                 setWindowTitle("Desafio FPF Tech (erro na API)");
             }
-
-            // Só agora exibe a interface e inicia timers/processos
             this->show();
-
-            // Função para atualizar texto, tocar áudio e exibir imagem
             auto updateText = [textLabel, imageLabel, this]() {
                 char* new_text = get_random_text();
                 if (new_text) {
                     textLabel->setText(new_text);
                     free(new_text);
                 }
-
-                // Tocar áudio (Qt5)
                 static QMediaPlayer* player = nullptr;
                 if (!player) {
                     player = new QMediaPlayer(this);
-                    player->setMedia(QUrl::fromLocalFile("frontend/assets/sound.mp3"));
+                    player->setMedia(QUrl::fromLocalFile("frontend/assets/sound.wav"));
                 }
                 player->stop();
                 player->play();
-                // Forçar volume máximo
                 player->setVolume(100);
                 QTimer::singleShot(1000, this, [player]() { player->stop(); });
-
-                // Exibir imagem por 1 segundo
                 QPixmap pixmap("frontend/assets/image.jpg");
                 if (!pixmap.isNull()) {
-                    int maxWidth = imageLabel->parentWidget()->width() - 40; // margem aproximada
+                    int maxWidth = imageLabel->parentWidget()->width() - 40;
                     QPixmap scaledPixmap = pixmap.scaled(maxWidth, imageLabel->height(), Qt::KeepAspectRatio, Qt::SmoothTransformation);
                     imageLabel->setPixmap(scaledPixmap);
                     imageLabel->setVisible(true);
@@ -147,13 +134,10 @@ MainWindow::MainWindow(QWidget* parent) : QWidget(parent) {
                     });
                 }
             };
-
             updateText();
-
             QTimer* textTimer = new QTimer(this);
             connect(textTimer, &QTimer::timeout, updateText);
             textTimer->start(10000);
-
             QTimer* elapsedTimer = new QTimer(this);
             connect(elapsedTimer, &QTimer::timeout, [elapsedLabel]() {
                 double elapsed = get_elapsed_seconds();
