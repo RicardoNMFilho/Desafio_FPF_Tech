@@ -117,7 +117,7 @@ Este projeto foi desenvolvido para ser executado em ambiente Linux utilizando Do
 
 - Caso não veja a interface gráfica, verifique se o servidor X11 está ativo e se a variável `DISPLAY` está correta.
 - O backend consome a API [WorldTimeAPI](http://worldtimeapi.org/) para exibir o horário.
-- O conjunto de textos aleatórios é gerado uma única vez, e os sorteios subsequentes ocorrem localmente.
+- O conjunto de textos aleatórios é gerado uma única vez, e os sorteios subsequentes ocorrem sobre o conteúdo disponível no cache.
 
 ### Finalização
 
