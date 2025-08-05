@@ -1,4 +1,3 @@
-
 #include <QVBoxLayout>
 #include <QLabel>
 #include <QString>
