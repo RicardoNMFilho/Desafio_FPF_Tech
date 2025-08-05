@@ -133,7 +133,7 @@ MainWindow::MainWindow(QWidget* parent) : QWidget(parent) {
                 static QMediaPlayer* player = nullptr;
                 if (!player) {
                     player = new QMediaPlayer(this);
-                    player->setMedia(QUrl::fromLocalFile("frontend/assets/sound.wav"));
+                    player->setMedia(QUrl::fromLocalFile("/app/frontend/assets/sound.wav"));
                 }
 
                 player->stop();
