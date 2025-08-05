@@ -137,16 +137,3 @@ char ** generate_list_random_texts(int *num_texts) {
 }
 
 
-/**
- * Libera a memória alocada para uma lista de textos gerados por generate_list_random_texts.
- *
- * @param list Ponteiro para o array de textos
- * @param num_texts Número de textos na lista
- */
-void free_list_random_texts(char **list, int num_texts) {
-    if (!list) return;
-    for (int i = 0; i < num_texts; i++) {
-        free(list[i]);
-    }
-    free(list);
-}

@@ -1,8 +1,7 @@
 #ifndef LIB_GENTEXTS_H
 #define LIB_GENTEXTS_H
 
-char ** generate_list_random_texts (int *num_texts);
-void free_list_random_texts(char **list, int num_texts);
-void free_list_random_texts(char **list, int num_texts);
+// Agora sim, a biblioteca retorna uma função única, não tinha me atentado ao enunciado e a possibilidade de usar a mesma lista.
+char ** generate_list_random_texts (int * num_texts);
 
 #endif

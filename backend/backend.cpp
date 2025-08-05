@@ -114,74 +114,82 @@ int random_number(int min, int max) {
 }
 
 
+
 /**
  * Carrega dinamicamente a biblioteca compartilhada libgentexts.so usando dlopen,
- * obtém ponteiros para as funções de geração e liberação de textos via dlsym,
- * gera uma lista de textos aleatórios e retorna uma cópia de um deles.
+ * obtém ponteiro para a função de geração de textos, gera o conjunto de textos uma única vez
+ * e realiza sorteios subsequentes dentro desse conjunto já carregado.
  *
  * Explicação sobre dlfcn:
  * - dlopen: Carrega uma biblioteca compartilhada em tempo de execução. Recebe o caminho do arquivo e flags (RTLD_LAZY para resolução preguiçosa de símbolos).
- * - dlsym: Obtém o endereço de uma função ou variável exportada pela biblioteca. Recebe o handle retornado por dlopen e o nome do símbolo.
+ * - dlsym: Obtém o endereço da função exportada pela biblioteca. Recebe o handle retornado por dlopen e o nome do símbolo.
  * - dlclose: Libera a biblioteca carregada.
  * - dlerror: Retorna uma string descrevendo o último erro ocorrido nas operações acima.
  *
- * Explicação sobre as funções da libgentexts:
+ * Explicação sobre a função da libgentexts:
  * - generate_list_random_texts: Recebe ponteiro para int, retorna ponteiro para array de strings (char**), cada string é um texto gerado.
- * - free_list_random_texts: Recebe o array de textos e o número de textos, libera toda a memória alocada.
  *
  * Passos:
- * 1. Carrega a biblioteca libgentexts.so.
- * 2. Obtém ponteiros para as funções de geração e liberação de textos.
- * 3. Gera uma lista de textos aleatórios.
- * 4. Seleciona aleatoriamente um dos textos gerados.
- * 5. Faz uma cópia do texto selecionado (strdup).
- * 6. Libera a lista de textos e a biblioteca.
- * 7. Retorna o texto selecionado.
+ * 1. Carrega a biblioteca libgentexts.so (apenas na primeira chamada).
+ * 2. Obtém ponteiro para a função de geração de textos.
+ * 3. Gera e armazena o conjunto de textos em cache.
+ * 4. Para cada chamada subsequente, sorteia um texto do conjunto já carregado.
+ * 5. Retorna uma cópia do texto sorteado (strdup).
  *
  * Retorno:
- * - Ponteiro para string alocada dinamicamente contendo o texto selecionado (deve ser liberado pelo usuário)
+ * - Ponteiro para string alocada dinamicamente contendo o texto sorteado (deve ser liberado pelo usuário)
  * - nullptr em caso de erro
  */
+
+// Cache para textos gerados
+static char** cached_texts = nullptr;
+static int cached_count = 0;
+static void* gentexts_handle = nullptr;
+
 char* get_random_text() {
-    void* handle = dlopen("../lib/libgentexts.so", RTLD_LAZY);
-
-    if (!handle) {
-        cerr << "Erro ao carregar libgentexts.so: " << dlerror() << endl;
-        return nullptr;
+    if (!cached_texts) {
+        gentexts_handle = dlopen("../lib/libgentexts.so", RTLD_LAZY);
+        if (!gentexts_handle) {
+            cerr << "Erro ao carregar libgentexts.so: " << dlerror() << endl;
+            return nullptr;
+        }
+        dlerror();
+        using generate_func = char** (*)(int*);
+        generate_func generate = (generate_func)dlsym(gentexts_handle, "generate_list_random_texts");
+        const char* error = dlerror();
+        if (error) {
+            cerr << "Erro ao localizar função: " << error << endl;
+            dlclose(gentexts_handle);
+            gentexts_handle = nullptr;
+            return nullptr;
+        }
+        cached_texts = generate(&cached_count);
+        if (!cached_texts || cached_count == 0) {
+            dlclose(gentexts_handle);
+            gentexts_handle = nullptr;
+            return nullptr;
+        }
     }
+    int index = random_number(0, cached_count - 1);
+    return strdup(cached_texts[index]);
+}
 
-    dlerror();
-
-    // Define tipos para ponteiros de função
-    using generate_func = char** (*)(int*);
-    using free_func = void (*)(char**, int);
-
-    // Obtém ponteiros para as funções da biblioteca
-    generate_func generate = (generate_func)dlsym(handle, "generate_list_random_texts");
-    free_func release = (free_func)dlsym(handle, "free_list_random_texts");
-
-    const char * error = dlerror();
-
-    if (error) {
-        cerr << "Erro ao localizar função: " << error << endl;
-        dlclose(handle);
-        return nullptr;
+/**
+ * Libera o conjunto de textos gerado e o handle da biblioteca dinâmica.
+ * Deve ser chamada ao final do programa para evitar vazamento de memória.
+ */
+void backend_cleanup() {
+    if (cached_texts) {
+        for (int i = 0; i < cached_count; i++) {
+            free(cached_texts[i]);
+        }
+        free(cached_texts);
+        cached_texts = nullptr;
     }
-
-    int count = 0;
-
-    char ** texts = generate(&count);
-
-    if (!texts || count == 0) {
-        dlclose(handle);
-        return nullptr;
+    if (gentexts_handle) {
+        dlclose(gentexts_handle);
+        gentexts_handle = nullptr;
     }
-
-    int index = random_number(0, count - 1);
-    char * selected = strdup(texts[index]);
-
-    release(texts, count);
-    dlclose(handle);
-    return selected;
+    cached_count = 0;
 }
 
