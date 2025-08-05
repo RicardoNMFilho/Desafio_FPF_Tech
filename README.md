@@ -129,9 +129,22 @@ Para rodar a aplicação no Linux usando Docker com suporte à interface gráfic
 
 ### Pré-requisitos
 
-- Docker instalado e funcionando no seu Linux.
-- Servidor X11 ativo (normalmente já vem configurado no Linux).
-- PulseAudio rodando no host Linux.
+* Docker instalado e funcionando no seu Linux.
+* Servidor X11 ativo (normalmente já vem configurado no Linux).
+* PulseAudio rodando no host Linux.
+* A variável `XDG_RUNTIME_DIR` deve estar definida (geralmente é `/run/user/1000`).
+
+Verifique com:
+
+```bash
+echo $XDG_RUNTIME_DIR
+```
+
+Se estiver vazio, defina com:
+
+```bash
+export XDG_RUNTIME_DIR=/run/user/$(id -u)
+```
 
 ### Comandos
 
@@ -141,10 +154,16 @@ No terminal, defina a variável do servidor PulseAudio:
 export PULSE_SERVER=unix:${XDG_RUNTIME_DIR}/pulse/native
 ```
 
+Libere acesso ao servidor X11 para o container:
+
+```bash
+xhost +local:
+```
+
 Depois execute o container Docker com:
 
 ```bash
-sudo docker run -it \
+sudo docker run -it --rm \
   -e DISPLAY=$DISPLAY \
   -e PULSE_SERVER=$PULSE_SERVER \
   -v /tmp/.X11-unix:/tmp/.X11-unix \
@@ -156,17 +175,21 @@ sudo docker run -it \
 
 ### Explicações
 
-- `-e DISPLAY=$DISPLAY` permite acessar o servidor X11 para exibir a interface gráfica. 
-- `-e PULSE_SERVER=$PULSE_SERVER` permite acesso ao servidor de áudio PulseAudio do host. 
-- `-v /tmp/.X11-unix:/tmp/.X11-unix` monta o socket do X11 para comunicação gráfica. 
-- `-v ${XDG_RUNTIME_DIR}/pulse/native:${XDG_RUNTIME_DIR}/pulse/native` e `-v ~/.config/pulse/cookie:/root/.config/pulse/cookie` permitem que o container use o áudio via PulseAudio do host. 
-- `-v $(pwd)/frontend/assets:/app/frontend/assets` monta a pasta local com arquivos multimídia para o container.
+* `-e DISPLAY=$DISPLAY` : Permite acessar o servidor X11 para exibir a interface gráfica.
+* `-e PULSE_SERVER=$PULSE_SERVER` : Permite acesso ao servidor de áudio PulseAudio do host.
+* `-v /tmp/.X11-unix:/tmp/.X11-unix` : Monta o socket do X11 para comunicação gráfica.
+* `-v ${XDG_RUNTIME_DIR}/pulse/native:${XDG_RUNTIME_DIR}/pulse/native` : Monta o socket nativo do PulseAudio.
+* `-v ~/.config/pulse/cookie:/root/.config/pulse/cookie` : Permite que o container autentique no PulseAudio.
+* `-v $(pwd)/frontend/assets:/app/frontend/assets` : Monta a pasta local com arquivos multimídia para o container.
+* `--rm` : Remove o container ao final da execução.
+* `-it` : Executa o container de forma interativa com terminal.
 
 ### Notas
 
-- Certifique-se de que o arquivo `sound.wav` está dentro da pasta `frontend/assets` na raiz do projeto. 
-- A variável `XDG_RUNTIME_DIR` geralmente é algo como `/run/user/1000`. Você pode verificar com `echo $XDG_RUNTIME_DIR`. 
-- Execute os comandos no diretório raiz do projeto (onde está a pasta `frontend`).
+* Certifique-se que o arquivo `sound.wav` está dentro da pasta `frontend/assets` na raiz do projeto.
+* A variável `XDG_RUNTIME_DIR` geralmente é algo como `/run/user/1000`. Você pode verificar com `echo $XDG_RUNTIME_DIR`.
+* Execute os comandos no diretório raiz do projeto (onde está a pasta `frontend`).
+
 
 ## Documentações e Tutoriais Utilizados
 
