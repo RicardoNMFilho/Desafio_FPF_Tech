@@ -9,13 +9,9 @@ RUN apt-get update && apt-get install -y \
     qtbase5-dev qt5-qmake qtbase5-dev-tools qtchooser \
     qtmultimedia5-dev qt5-image-formats-plugins libqt5concurrent5 \
     libqt5multimedia5-plugins \
-    qml-module-qtmultimedia \
     gstreamer1.0-plugins-base \
     gstreamer1.0-plugins-good \
-    gstreamer1.0-plugins-ugly \
-    gstreamer1.0-libav \
     gstreamer1.0-alsa \
-    alsa-utils \
     libx11-xcb1 libxcb1 libxcb-util1 libxrender1 libxi6 libxext6 libxfixes3 libxrandr2 libxinerama1 libxcursor1 \
     libxkbcommon0 libxkbcommon-x11-0 libgl1-mesa-glx libglib2.0-0 \
     && update-ca-certificates

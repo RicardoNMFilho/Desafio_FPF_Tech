@@ -43,14 +43,18 @@ MainWindow::MainWindow(QWidget* parent) : QWidget(parent) {
 
     // Bloco para imagem
     QGroupBox* imageBox = new QGroupBox("Imagem", this);
+
     QVBoxLayout* imageLayout = new QVBoxLayout(imageBox);
+
     QLabel* imageLabel = new QLabel(this);
     imageLabel->setAlignment(Qt::AlignCenter);
     imageLabel->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
     imageLabel->setFixedHeight(120);
     imageLabel->setVisible(false);
+
     imageLayout->addWidget(imageLabel);
     mainLayout->addWidget(imageBox);
+
     QLabel* elapsedLabel = new QLabel("Tempo decorrido: 0s", this);
     elapsedLabel->setAlignment(Qt::AlignCenter);
     elapsedLabel->setFont(titleFont);
@@ -80,18 +84,23 @@ MainWindow::MainWindow(QWidget* parent) : QWidget(parent) {
 
     // Inicialização assíncrona: só abrir interface após resposta da API
     this->hide();
+
     QtConcurrent::run([this, jsonLabel, elapsedLabel, textLabel, imageLabel]() {
+
         char* json = get_worldtime_json();
+
         QMetaObject::invokeMethod(this, [=]() {
+
             if (json) {
-                backend_init();
                 QString jsonStr(json);
                 jsonLabel->setText(jsonStr);
+
                 QString timezone, datetime;
                 QRegularExpression tzRegex(QStringLiteral("\"timezone\"\\s*:\\s*\"([^\"]+)\""));
                 QRegularExpression dtRegex(QStringLiteral("\"datetime\"\\s*:\\s*\"([^\"]+)\""));
                 QRegularExpressionMatch tzMatch = tzRegex.match(jsonStr);
                 QRegularExpressionMatch dtMatch = dtRegex.match(jsonStr);
+
                 if (tzMatch.hasMatch() && dtMatch.hasMatch()) {
                     timezone = tzMatch.captured(1);
                     datetime = dtMatch.captured(1);
@@ -100,27 +109,38 @@ MainWindow::MainWindow(QWidget* parent) : QWidget(parent) {
                 } else {
                     setWindowTitle("Desafio FPF Tech (dados inválidos)");
                 }
+
                 free(json);
             } else {
                 jsonLabel->setText("Falha ao requisitar worldtimeapi.");
                 setWindowTitle("Desafio FPF Tech (erro na API)");
             }
+
             this->show();
+
+            // Inicializa o timer ANTES da primeira escolha de string aleatória
+            backend_init();
+
+
+            // Função para atualizar texto, som e imagem
             auto updateText = [textLabel, imageLabel, this]() {
                 char* new_text = get_random_text();
                 if (new_text) {
                     textLabel->setText(new_text);
                     free(new_text);
                 }
+
                 static QMediaPlayer* player = nullptr;
                 if (!player) {
                     player = new QMediaPlayer(this);
                     player->setMedia(QUrl::fromLocalFile("frontend/assets/sound.wav"));
                 }
+
                 player->stop();
                 player->play();
                 player->setVolume(100);
                 QTimer::singleShot(1000, this, [player]() { player->stop(); });
+
                 QPixmap pixmap("frontend/assets/image.jpg");
                 if (!pixmap.isNull()) {
                     int maxWidth = imageLabel->parentWidget()->width() - 40;
@@ -133,16 +153,25 @@ MainWindow::MainWindow(QWidget* parent) : QWidget(parent) {
                     });
                 }
             };
+
+            // Atualiza texto na inicialização
             updateText();
-            QTimer* textTimer = new QTimer(this);
-            connect(textTimer, &QTimer::timeout, updateText);
-            textTimer->start(10000);
+
+            // Timer único para relógio e troca de texto sincronizada
             QTimer* elapsedTimer = new QTimer(this);
-            connect(elapsedTimer, &QTimer::timeout, [elapsedLabel]() {
+            int lastTextUpdate = -1;
+            connect(elapsedTimer, &QTimer::timeout, [elapsedLabel, updateText, &lastTextUpdate]() mutable {
                 double elapsed = get_elapsed_seconds();
                 elapsedLabel->setText(QString("Tempo decorrido: %1s").arg((int)elapsed));
+                int elapsedInt = static_cast<int>(elapsed);
+                if (elapsedInt % 10 == 0 && elapsedInt != lastTextUpdate) {
+                    updateText();
+                    lastTextUpdate = elapsedInt;
+                }
             });
             elapsedTimer->start(1000);
+
         });
+
     });
 }
